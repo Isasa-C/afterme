@@ -1,0 +1,372 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --accent: #F9735B;
+  --accent-soft: rgba(249, 115, 91, 0.14);
+  --accent-tint: rgba(255, 184, 107, 0.22);
+  --accent-ring: #FF9F7A;
+  --accent-ink: #8F342A;
+  color: #2A2020;
+  background: #FFF7F1;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  font-family: Inter, sans-serif;
+  background:
+    radial-gradient(44rem 30rem at 0% -12%, rgba(255, 196, 150, 0.42), transparent 68%),
+    radial-gradient(38rem 28rem at 102% 2%, rgba(255, 143, 128, 0.26), transparent 66%),
+    radial-gradient(34rem 24rem at 70% 106%, rgba(101, 216, 187, 0.22), transparent 68%),
+    linear-gradient(135deg, #fffaf5 0%, #fff3ea 46%, #f7fbf3 100%);
+  color: #2A2020;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+.theme-time-input::-webkit-calendar-picker-indicator {
+  border-radius: 999px;
+  padding: 6px;
+  background-color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(249, 115, 91, 0.42);
+  outline-offset: 3px;
+}
+
+.safe-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+.phone-shell {
+  min-height: 100vh;
+  background:
+    radial-gradient(44rem 30rem at 0% -12%, rgba(255, 196, 150, 0.42), transparent 68%),
+    radial-gradient(38rem 28rem at 102% 2%, rgba(255, 143, 128, 0.26), transparent 66%),
+    radial-gradient(34rem 24rem at 70% 106%, rgba(101, 216, 187, 0.22), transparent 68%),
+    linear-gradient(135deg, #fffaf5 0%, #fff3ea 46%, #f7fbf3 100%);
+}
+
+.lavender-panel {
+  background:
+    radial-gradient(24rem 14rem at 88% -8%, rgba(211, 202, 255, 0.55), transparent 70%),
+    linear-gradient(135deg, rgba(250, 248, 255, 0.94), rgba(241, 236, 255, 0.82));
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.72);
+  border: 0.5px solid rgba(255, 255, 255, 0.45);
+  box-shadow:
+    0 18px 42px -24px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.glass-icon {
+  background: linear-gradient(155deg, rgba(255, 250, 245, 0.9), rgba(255, 228, 209, 0.74));
+  box-shadow:
+    0 10px 20px rgba(196, 111, 72, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    inset 0 -1px 0 rgba(132, 160, 211, 0.2);
+}
+
+.shimmer {
+  background: linear-gradient(90deg, rgba(249, 115, 91, 0.14) 25%, #fff 45%, rgba(101, 216, 187, 0.16) 65%);
+  background-size: 220% 100%;
+  animation: shimmer 1.3s infinite linear;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -220% 0;
+  }
+}
+
+@keyframes commit-fade {
+  0%,
+  55% {
+    opacity: 1;
+  }
+  82%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes go-ready {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+}
+
+@keyframes soft-leave {
+  0% {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes paw-punch {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) rotate(-100deg) scale(0.3);
+  }
+  46% {
+    opacity: 1;
+    transform: translateY(0) rotate(-82deg) scale(1.4);
+  }
+  74% {
+    opacity: 0.95;
+    transform: translateY(0) rotate(-90deg) scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-2px) rotate(-90deg) scale(1.05);
+  }
+}
+
+@keyframes tile-paw-click {
+  0% {
+    transform: scale(1);
+  }
+  24% {
+    transform: scale(0.94) translateY(1px);
+  }
+  56% {
+    transform: scale(1.05) translateY(-1px);
+  }
+  82% {
+    transform: scale(0.99);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes cat-run-across {
+  0% {
+    transform: translateX(-24vw) translateY(0) scale(0.92);
+  }
+  28% {
+    transform: translateX(24vw) translateY(-4px) scale(1);
+  }
+  58% {
+    transform: translateX(66vw) translateY(0) scale(1);
+  }
+  100% {
+    transform: translateX(126vw) translateY(-2px) scale(0.94);
+  }
+}
+
+@keyframes cat-bob {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -3px;
+  }
+}
+
+@keyframes cat-tail-swish {
+  0%,
+  100% {
+    transform: rotate(22deg);
+  }
+  50% {
+    transform: rotate(44deg);
+  }
+}
+
+@keyframes cat-leg-run {
+  0%,
+  100% {
+    transform: rotate(18deg);
+  }
+  50% {
+    transform: rotate(-24deg);
+  }
+}
+
+.commit-page-fade main,
+.commit-page-fade footer {
+  animation: commit-fade 950ms ease-out both;
+}
+
+.go-ready {
+  animation: go-ready 600ms ease-out 1;
+}
+
+.soft-leave {
+  animation: soft-leave 950ms ease-out both;
+}
+
+.paw-punch {
+  animation: paw-punch 550ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.tile-paw-click {
+  animation: tile-paw-click 430ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transform-origin: center;
+}
+
+.cat-run-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.running-cat {
+  position: absolute;
+  bottom: 5.25rem;
+  left: 0;
+  width: 86px;
+  height: 52px;
+  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.25));
+  animation:
+    cat-run-across 980ms cubic-bezier(0.2, 0.82, 0.22, 1) both,
+    cat-bob 180ms ease-in-out infinite;
+}
+
+.cat-body,
+.cat-head,
+.cat-tail,
+.cat-leg,
+.cat-collar,
+.cat-ear,
+.cat-eye {
+  position: absolute;
+  display: block;
+}
+
+.cat-body {
+  right: 22px;
+  bottom: 13px;
+  width: 48px;
+  height: 25px;
+  border-radius: 999px 999px 850px 850px;
+  background: linear-gradient(135deg, #fff4dd 0%, #e9bb84 78%);
+}
+
+.cat-head {
+  right: 8px;
+  bottom: 21px;
+  width: 27px;
+  height: 24px;
+  border-radius: 50% 52% 48% 50%;
+  background: linear-gradient(135deg, #fff4dd 0%, #e5b174 78%);
+}
+
+.cat-ear {
+  top: -7px;
+  width: 11px;
+  height: 12px;
+  border-radius: 3px 10px 2px 10px;
+  background: #f1c78f;
+}
+
+.cat-ear-left {
+  left: 4px;
+  transform: rotate(-24deg);
+}
+
+.cat-ear-right {
+  right: 3px;
+  transform: rotate(26deg);
+}
+
+.cat-eye {
+  right: 6px;
+  top: 9px;
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: #4f3726;
+}
+
+.cat-tail {
+  left: 4px;
+  bottom: 27px;
+  width: 36px;
+  height: 12px;
+  border-top: 7px solid #e6b375;
+  border-radius: 999px 0 0 0;
+  transform-origin: right center;
+  animation: cat-tail-swish 220ms ease-in-out infinite;
+}
+
+.cat-collar {
+  right: 31px;
+  bottom: 33px;
+  width: 14px;
+  height: 4px;
+  border-radius: 999px;
+}
+
+.cat-leg {
+  bottom: 7px;
+  width: 7px;
+  height: 17px;
+  border-radius: 999px;
+  background: #dba466;
+  transform-origin: top center;
+  animation: cat-leg-run 170ms ease-in-out infinite;
+}
+
+.cat-leg-front {
+  right: 24px;
+}
+
+.cat-leg-back {
+  right: 54px;
+  animation-delay: 85ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .commit-page-fade main,
+  .commit-page-fade footer,
+  .go-ready,
+  .soft-leave,
+  .paw-punch,
+  .tile-paw-click,
+  .running-cat,
+  .cat-tail,
+  .cat-leg {
+    animation: none;
+  }
+}
