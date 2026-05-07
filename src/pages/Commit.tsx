@@ -66,7 +66,6 @@ export function Commit() {
   const completeCommitment = useCompleteCommitment();
   const createReflection = useCreateReflection();
   const [sheetCommitment, setSheetCommitment] = useState<Commitment | null>(null);
-  const [score, setScore] = useState(8);
   const [note, setNote] = useState("");
   const featured = activities[0];
   const popular = activities.slice(1);
@@ -79,7 +78,7 @@ export function Commit() {
   };
   const submit = async (outcome: ReflectionOutcome) => {
     if (!sheetCommitment) return;
-    await createReflection.mutateAsync({ commitmentId: sheetCommitment.id, outcome, feelingScore: score, note });
+    await createReflection.mutateAsync({ commitmentId: sheetCommitment.id, outcome, note: note.trim() });
     setSheetCommitment(null);
     setNote("");
   };
@@ -173,8 +172,6 @@ export function Commit() {
                 </button>
               ))}
             </div>
-            <label className="mt-6 block font-bold text-ink">Feeling score: {score}</label>
-            <input className="mt-2 w-full accent-brand-600" type="range" min="1" max="10" value={score} onChange={(event) => setScore(Number(event.target.value))} />
             <textarea className="mt-4 min-h-24 w-full rounded-2xl border border-slate-200 p-4" placeholder="Anything to remember?" value={note} onChange={(event) => setNote(event.target.value)} />
           </div>
         </div>

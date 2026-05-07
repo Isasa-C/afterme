@@ -1,45 +1,19 @@
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Apple,
   ArrowRight,
   CalendarDays,
   Check,
   Clock3,
-  Droplet,
-  Footprints,
-  Headphones,
-  KeyRound,
   PawPrint,
-  Shirt,
   Sparkles,
   UserRound,
   X,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useActivities, useMarkCommitmentGone, useStartPackingCommitment } from "../hooks/useAfterMeData";
-import type { Activity } from "../lib/types";
+import { ItemIcon } from "../components/ItemIcon";
+import { useActivities, useActivityItems, useMarkCommitmentGone, useStartPackingCommitment } from "../hooks/useAfterMeData";
+import type { ActivityItem } from "../lib/types";
 import { cn } from "../lib/utils";
-
-const activityNavItems = [
-  { id: "gym", label: "Gym" },
-  { id: "focus", label: "Study" },
-  { id: "swimming", label: "Swim" },
-  { id: "outside", label: "Errand" },
-  { id: "social", label: "Social" },
-];
-
-const mustTiles = [
-  { id: "gym-shoes", label: "Gym shoes", icon: Footprints },
-  { id: "water-bottle", label: "Water bottle", icon: Droplet },
-  { id: "keys", label: "Keys", icon: KeyRound },
-];
-
-const optionalTiles = [
-  { id: "headphones", label: "Headphones", icon: Headphones },
-  { id: "towel", label: "Towel", icon: Shirt },
-  { id: "snack", label: "Snack", icon: Apple },
-];
 
 const activityBackgrounds: Record<string, string> = {
   gym: "/reference/gym.png",
@@ -81,16 +55,14 @@ function reminderLabel(date: Date) {
 }
 
 function ChecklistTile({
-  label,
-  icon: Icon,
+  item,
   checked,
   optional,
   punching,
   accentColor,
   onClick,
 }: {
-  label: string;
-  icon: LucideIcon;
+  item: ActivityItem;
   checked: boolean;
   optional?: boolean;
   punching: boolean;
@@ -101,10 +73,10 @@ function ChecklistTile({
     <button
       type="button"
       onClick={onClick}
-      aria-label={label}
+      aria-label={item.label}
       aria-pressed={checked}
       className={cn(
-        "relative grid min-h-[60px] place-items-center rounded-[14px] border p-2 transition",
+        "relative grid min-h-[74px] place-items-center gap-1 rounded-[14px] border px-1.5 py-2 transition",
         "border-[rgba(42,49,64,0.15)] bg-white/60",
         optional && "border-dashed opacity-70",
         checked && "border-solid opacity-100",
@@ -118,7 +90,16 @@ function ChecklistTile({
         transition: "background 0.3s ease, border-color 0.3s ease",
       }}
     >
-      <Icon className="h-[22px] w-[22px]" style={{ color: checked ? "white" : "#5A6175", transition: "color 0.3s ease" }} strokeWidth={2.35} />
+      <ItemIcon
+        iconKey={item.icon_key}
+        className={cn(
+          "h-8 w-8 rounded-[10px] bg-transparent text-[#5A6175] shadow-none",
+          checked && "bg-white/20 text-white",
+        )}
+      />
+      <span className={cn("line-clamp-2 max-w-full text-center text-[10px] font-bold leading-[1.1] text-[#5A6175]", checked && "text-white")}>
+        {item.label}
+      </span>
       {checked ? (
         <span className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full bg-white" style={{ color: accentColor, transition: "color 0.3s ease" }}>
           <Check className="h-3 w-3" strokeWidth={3} />
@@ -131,11 +112,10 @@ function ChecklistTile({
 
 export function Today() {
   const navigate = useNavigate();
-  const { data: activities } = useActivities();
+  const { data: activities = [] } = useActivities();
   const startPacking = useStartPackingCommitment();
   const markGone = useMarkCommitmentGone();
-  const [selectedId, setSelectedId] = useState("gym");
-  const [accentColor, setAccentColor] = useState(tabColorMap.gym);
+  const [selectedId, setSelectedId] = useState("");
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [pawItemId, setPawItemId] = useState("");
   const [remindOpen, setRemindOpen] = useState(false);
@@ -143,26 +123,28 @@ export function Today() {
   const [reminderNotice, setReminderNotice] = useState("");
   const [catRunning, setCatRunning] = useState(false);
   const reminderTimerRef = useRef<number | null>(null);
-  const selected = useMemo(() => activities?.find((activity) => activity.id === selectedId) ?? activities?.[0], [activities, selectedId]);
-  const checkedMust = mustTiles.filter((item) => checkedItems.has(item.id)).length;
-  const ready = checkedMust === mustTiles.length;
-  const progress = (checkedMust / mustTiles.length) * 100;
-  const backgroundImage = activityBackgrounds[selectedId] ?? activityBackgrounds.gym;
-  const navActivities = useMemo(
-    () =>
-      activityNavItems
-        .map((item) => {
-          const activity = activities?.find((row) => row.id === item.id);
-          return activity ? { ...item, activity } : null;
-        })
-        .filter((item): item is { id: string; label: string; activity: Activity } => Boolean(item)),
-    [activities],
-  );
+  const selected = useMemo(() => activities.find((activity) => activity.id === selectedId) ?? activities[0], [activities, selectedId]);
+  const { data: activityItems = [] } = useActivityItems(selected?.id);
+  const mustItems = useMemo(() => activityItems.filter((item) => item.priority === "must"), [activityItems]);
+  const optionalItems = useMemo(() => activityItems.filter((item) => item.priority === "optional"), [activityItems]);
+  const checkedMust = mustItems.filter((item) => checkedItems.has(item.id)).length;
+  const ready = mustItems.length > 0 && checkedMust === mustItems.length;
+  const progress = mustItems.length ? (checkedMust / mustItems.length) * 100 : 0;
+  const accentColor = selected?.color ?? tabColorMap[selected?.id ?? ""] ?? tabColorMap[selected?.key ?? "gym"] ?? tabColorMap.gym;
+  const backgroundImage =
+    activityBackgrounds[selected?.id ?? ""] ?? activityBackgrounds[selected?.key ?? ""] ?? activityBackgrounds.gym;
 
   useEffect(() => {
     setCheckedItems(new Set());
     setPawItemId("");
-  }, [selectedId]);
+  }, [selected?.id]);
+
+  useEffect(() => {
+    if (!activities.length) return;
+    if (!selectedId || !activities.some((activity) => activity.id === selectedId)) {
+      setSelectedId(activities[0].id);
+    }
+  }, [activities, selectedId]);
 
   useEffect(() => {
     return () => {
@@ -214,7 +196,6 @@ export function Today() {
 
   const setActiveTab = (tab: string) => {
     setSelectedId(tab);
-    setAccentColor(tabColorMap[tab] ?? tabColorMap.gym);
   };
 
   return (
@@ -295,13 +276,13 @@ export function Today() {
           </div>
 
           <div className="mt-7 flex justify-center gap-2 overflow-x-auto pb-1" aria-label="Choose activity">
-            {navActivities.map((item) => {
-              const active = selectedId === item.id;
+            {activities.map((activity) => {
+              const active = selected?.id === activity.id;
               return (
                 <button
-                  key={item.id}
+                  key={activity.id}
                   type="button"
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => setActiveTab(activity.id)}
                   className={cn("shrink-0 rounded-full border py-[7px] text-[13px]", active ? "px-4 font-semibold" : "px-3.5")}
                   style={{
                     background: active ? "rgba(255,255,255,0.88)" : "rgba(255,255,255,0.12)",
@@ -313,7 +294,7 @@ export function Today() {
                     transition: "background 0.3s ease, color 0.3s ease",
                   }}
                 >
-                  {item.label}
+                  {activity.name}
                 </button>
               );
             })}
@@ -332,17 +313,16 @@ export function Today() {
         >
           <div className="flex items-center justify-between">
             <div className="text-[11px] font-medium uppercase tracking-[1.2px]" style={{ color: accentColor, transition: "color 0.3s ease" }}>Must have</div>
-            <div className="text-[11px] text-gray-500">{checkedMust} of {mustTiles.length}</div>
+            <div className="text-[11px] text-gray-500">{checkedMust} of {mustItems.length}</div>
           </div>
           <div className="mt-3 h-[3px] overflow-hidden rounded-full bg-[#E6E7EB]">
             <div className="h-full rounded-full transition-all duration-300" style={{ background: accentColor, transition: "background 0.3s ease, width 0.3s ease", width: `${progress}%` }} />
           </div>
           <div className="mt-[14px] grid grid-cols-3 gap-[7px]">
-            {mustTiles.map((item) => (
+            {mustItems.map((item) => (
               <ChecklistTile
                 key={item.id}
-                label={item.label}
-                icon={item.icon}
+                item={item}
                 checked={checkedItems.has(item.id)}
                 punching={pawItemId === item.id}
                 accentColor={accentColor}
@@ -357,11 +337,10 @@ export function Today() {
               <div className="text-[11px] text-[#B5AB95]">Skip if not today</div>
             </div>
             <div className="mt-3 grid grid-cols-3 gap-[7px]">
-              {optionalTiles.map((item) => (
+              {optionalItems.map((item) => (
                 <ChecklistTile
                   key={item.id}
-                  label={item.label}
-                  icon={item.icon}
+                  item={item}
                   checked={checkedItems.has(item.id)}
                   optional
                   punching={pawItemId === item.id}
@@ -376,9 +355,9 @@ export function Today() {
             <button
               type="button"
               onClick={goDirectly}
-              disabled={catRunning}
+              disabled={!ready || catRunning}
               className="flex w-full items-center justify-center gap-2 rounded-full p-[13px] text-[14px] font-medium text-white"
-              style={{ background: accentColor, opacity: catRunning ? 0.88 : 1, transition: "background 0.3s ease, opacity 0.2s ease" }}
+              style={{ background: accentColor, opacity: !ready || catRunning ? 0.62 : 1, transition: "background 0.3s ease, opacity 0.2s ease" }}
             >
               Ready
               <ArrowRight className="h-4 w-4" />

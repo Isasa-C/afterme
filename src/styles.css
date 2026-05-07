@@ -176,6 +176,17 @@ textarea:focus-visible {
   }
 }
 
+@keyframes gym-panel-up {
+  0% {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes cat-run-across {
   0% {
     transform: translateX(-24vw) translateY(0) scale(0.92);

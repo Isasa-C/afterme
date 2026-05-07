@@ -1,5 +1,5 @@
-import { ArrowLeft, ArrowRight, Check, CheckCircle2, Clock3, MoreHorizontal, Sparkles, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, ArrowRight, Check, CheckCircle2, Clock3, MoreHorizontal, PawPrint, Sparkles, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ActivityIcon } from "../components/ActivityIcon";
 import { ItemIcon } from "../components/ItemIcon";
@@ -123,6 +123,278 @@ function ChecklistRow({
   );
 }
 
+type TennisSurface = "Clay" | "Hard" | "Grass" | "Indoor";
+type TennisFormat = "Best of 3" | "Best of 5";
+
+const tennisAccent = "#D4546A";
+const tennisPhysicalItems = ["Dynamic warm-up (10 min)", "Shadow swings", "Serve warm-up (10 balls)", "Footwork ladder", "Hydrate 500ml"];
+const tennisMentalItems = ["Set your intention", "Box breathing 4-4-4", "Recall a strong match", "Pick one tactic", "Accept the nerves"];
+
+function TennisSegmented<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: T[];
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div>
+      <div className="mb-2 text-[11px] font-black uppercase tracking-[0.12em] text-white/65">{label}</div>
+      <div className="grid grid-cols-2 gap-2 rounded-[18px] border border-white/18 bg-white/12 p-1.5 backdrop-blur-[12px]">
+        {options.map((option) => (
+          <button
+            key={option}
+            type="button"
+            onClick={() => onChange(option)}
+            className={cn(
+              "min-h-10 rounded-[14px] px-3 text-[12px] font-black text-white/78 transition",
+              value === option && "bg-white text-[#2A2020] shadow-[0_14px_30px_-22px_rgba(0,0,0,0.8)]",
+            )}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TennisChecklistItem({
+  label,
+  checked,
+  accent,
+  punching,
+  onToggle,
+}: {
+  label: string;
+  checked: boolean;
+  accent: string;
+  punching: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={checked}
+      className={cn(
+        "relative flex min-h-[44px] items-center gap-2 rounded-[16px] border border-white/18 bg-white/12 px-2.5 py-2 text-left text-white shadow-[0_16px_32px_-28px_rgba(0,0,0,0.75)] backdrop-blur-[10px] transition",
+        checked && "border-transparent text-white tile-paw-click",
+      )}
+      style={checked ? { backgroundColor: accent } : undefined}
+    >
+      <span className={cn("grid h-5 w-5 shrink-0 place-items-center rounded-full border border-white/55 bg-white/10", checked && "border-white bg-white/20")}>
+        {checked ? <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} /> : null}
+      </span>
+      <span className="min-w-0 text-[12px] font-bold leading-tight">{label}</span>
+      {punching ? <PawPrint className="paw-punch pointer-events-none absolute inset-0 m-auto h-9 w-9 text-white" strokeWidth={2.8} /> : null}
+    </button>
+  );
+}
+
+function TennisPreMatchScreen({
+  commitmentId,
+  activityName,
+  reduced,
+}: {
+  commitmentId?: string;
+  activityName?: string;
+  reduced: boolean;
+}) {
+  const navigate = useNavigate();
+  const abandon = useAbandonCommitment();
+  const markGone = useMarkCommitmentGone();
+  const [confirmExit, setConfirmExit] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [launching, setLaunching] = useState(false);
+  const launchingRef = useRef(false);
+  const [warmupStarted, setWarmupStarted] = useState(false);
+  const [opponent, setOpponent] = useState("");
+  const [surface, setSurface] = useState<TennisSurface>("Clay");
+  const [format, setFormat] = useState<TennisFormat>("Best of 3");
+  const [tiebreak, setTiebreak] = useState(true);
+  const [readyItems, setReadyItems] = useState<Set<string>>(new Set());
+  const [pawItem, setPawItem] = useState("");
+  const checkedCount = readyItems.size;
+  const allReady = checkedCount === tennisPhysicalItems.length + tennisMentalItems.length;
+  const title = activityName?.toUpperCase().includes("TENNIS") ? activityName : "Tennis match";
+
+  const matchConfig = {
+    opponent: opponent.trim(),
+    surface,
+    format,
+    tiebreak,
+  };
+
+  const startMatch = async () => {
+    if (!commitmentId || launchingRef.current) return;
+    launchingRef.current = true;
+    setLaunching(true);
+    await markGone.mutateAsync(commitmentId);
+    setIsLeaving(true);
+    window.setTimeout(
+      () =>
+        navigate(`/committed/${commitmentId}`, {
+          state: { matchConfig },
+        }),
+      reduced ? 280 : 760,
+    );
+  };
+
+  useEffect(() => {
+    if (warmupStarted && allReady && !launching) {
+      void startMatch();
+    }
+  });
+
+  const toggleReadyItem = (label: string) => {
+    setPawItem(label);
+    window.setTimeout(() => setPawItem((current) => (current === label ? "" : current)), 520);
+    setReadyItems((current) => {
+      const next = new Set(current);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+  };
+
+  const stepAway = async () => {
+    if (!commitmentId) return;
+    await abandon.mutateAsync(commitmentId);
+    navigate("/today");
+  };
+
+  return (
+    <div
+      className={cn("relative min-h-screen overflow-hidden px-5 py-7 text-white", isLeaving && !reduced && "commit-page-fade")}
+      style={{
+        backgroundImage: "url('/reference/tennis.png'), linear-gradient(160deg, #2D3138 0%, #49343A 48%, #1F2429 100%)",
+        backgroundPosition: "center",
+        backgroundSize: "cover",
+      }}
+    >
+      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.18)_0%,rgba(0,0,0,0.48)_52%,rgba(0,0,0,0.7)_100%)]" />
+      <main className="relative mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-md flex-col">
+        <nav className="flex items-center justify-between">
+          <button onClick={() => navigate("/today")} className="text-[28px] italic leading-none text-white" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 400 }}>
+            AfterMe
+          </button>
+          <button
+            type="button"
+            onClick={() => setConfirmExit(true)}
+            className="rounded-full border border-white/25 bg-white/15 px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-white backdrop-blur-[10px]"
+          >
+            Out the door
+          </button>
+        </nav>
+
+        <section className="mt-12 flex flex-1 items-center">
+          <div className="w-full rounded-[30px] border border-white/28 bg-white/16 p-4 shadow-[0_28px_70px_-42px_rgba(0,0,0,0.68)] backdrop-blur-[22px]">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <span className="rounded-full px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.1em] text-white" style={{ backgroundColor: tennisAccent }}>
+                {title}
+              </span>
+              <span className="text-[12px] font-semibold text-white/68">{warmupStarted ? "Pre-match checklist" : "Match setup"}</span>
+            </div>
+
+            {!warmupStarted ? (
+              <div className="space-y-4">
+                <label className="block">
+                  <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.12em] text-white/65">Opponent name</span>
+                  <input
+                    value={opponent}
+                    onChange={(event) => setOpponent(event.target.value)}
+                    placeholder="Who are you playing?"
+                    className="h-12 w-full rounded-[18px] border border-white/20 bg-white/16 px-4 text-[15px] font-semibold text-white placeholder:text-white/48 outline-none backdrop-blur-[12px] focus:border-white/50"
+                  />
+                </label>
+                <TennisSegmented<TennisSurface> label="Surface" value={surface} options={["Clay", "Hard", "Grass", "Indoor"]} onChange={setSurface} />
+                <TennisSegmented<TennisFormat> label="Format" value={format} options={["Best of 3", "Best of 5"]} onChange={setFormat} />
+                <div className="flex items-center justify-between rounded-[18px] border border-white/18 bg-white/12 px-3 py-3 backdrop-blur-[12px]">
+                  <span className="text-[13px] font-black text-white">Tiebreak at 6-6</span>
+                  <button
+                    type="button"
+                    onClick={() => setTiebreak((value) => !value)}
+                    className="flex h-9 w-[88px] items-center rounded-full border border-white/20 bg-white/14 p-1 transition"
+                    aria-pressed={tiebreak}
+                  >
+                    <span
+                      className="grid h-7 w-10 place-items-center rounded-full text-[11px] font-black text-white shadow-[0_10px_24px_-18px_rgba(0,0,0,0.9)] transition"
+                      style={{ transform: tiebreak ? "translateX(38px)" : "translateX(0)", backgroundColor: tiebreak ? tennisAccent : "rgba(255,255,255,0.24)" }}
+                    >
+                      {tiebreak ? "Yes" : "No"}
+                    </span>
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setWarmupStarted(true)}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full px-5 text-[15px] font-black text-white shadow-[0_18px_36px_-18px_rgba(212,84,106,0.88)] transition active:scale-[0.99]"
+                  style={{ backgroundColor: tennisAccent }}
+                >
+                  Start warm-up
+                  <ArrowRight className="h-4 w-4" strokeWidth={2.7} />
+                </button>
+              </div>
+            ) : (
+              <div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <div className="mb-2 rounded-full bg-[#FAC775]/18 px-3 py-1 text-center text-[11px] font-black uppercase tracking-[0.1em] text-[#FAC775]">Physical</div>
+                    <div className="space-y-2">
+                      {tennisPhysicalItems.map((item) => (
+                        <TennisChecklistItem key={item} label={item} checked={readyItems.has(item)} accent={tennisAccent} punching={pawItem === item} onToggle={() => toggleReadyItem(item)} />
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="mb-2 rounded-full bg-[#A98BFF]/18 px-3 py-1 text-center text-[11px] font-black uppercase tracking-[0.1em] text-[#C8B9FF]">Mental</div>
+                    <div className="space-y-2">
+                      {tennisMentalItems.map((item) => (
+                        <TennisChecklistItem key={item} label={item} checked={readyItems.has(item)} accent={tennisAccent} punching={pawItem === item} onToggle={() => toggleReadyItem(item)} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 text-center text-[12px] font-bold text-white/70">{checkedCount} of 10 ready</div>
+                <button
+                  type="button"
+                  onClick={startMatch}
+                  className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-full px-5 text-[15px] font-black text-white shadow-[0_18px_36px_-18px_rgba(212,84,106,0.88)] transition active:scale-[0.99]"
+                  style={{ backgroundColor: tennisAccent }}
+                >
+                  I'm ready
+                  <ArrowRight className="h-4 w-4" strokeWidth={2.7} />
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+      </main>
+
+      {confirmExit ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-[#2A2020]/25 px-5 backdrop-blur-sm">
+          <div className="relative w-full max-w-sm rounded-[28px] border border-white/70 bg-white/92 p-6 text-[#2A2020] shadow-[0_30px_80px_-40px_rgba(8,13,47,0.5)]">
+            <h2 className="text-2xl font-black">Step away from this?</h2>
+            <p className="mt-3 text-[15px] font-semibold leading-relaxed text-[#8A675D]">Your pre-match setup can wait until you are ready.</p>
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <button onClick={stepAway} className="rounded-[18px] border border-[#FFD2BD] bg-white/70 px-4 py-3 font-black text-[#8A675D]">Step away</button>
+              <button onClick={() => setConfirmExit(false)} className="rounded-[18px] px-4 py-3 font-black text-white" style={{ backgroundColor: tennisAccent }}>Keep going</button>
+            </div>
+            <button type="button" className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full bg-white/80 text-[#8A675D]" aria-label="Close dialog" onClick={() => setConfirmExit(false)}>
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function CommitLauncher() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -144,6 +416,8 @@ export function CommitLauncher() {
   const ready = mustItems.length > 0 && remainingMust === 0;
   const copy = packCopy[activity?.key ?? "custom"];
   const mood = (activity && (launcherMood[activity.id] ?? launcherMood[activity.key])) ?? launcherMood.custom;
+  const activityText = `${activity?.id ?? ""} ${activity?.key ?? ""} ${activity?.name ?? ""}`.toLowerCase();
+  const isTennis = activityText.includes("tennis");
 
   useEffect(() => {
     const interval = window.setInterval(() => setNow(Date.now()), 1000);
@@ -180,6 +454,10 @@ export function CommitLauncher() {
     await abandon.mutateAsync(id);
     navigate("/today");
   };
+
+  if (isTennis) {
+    return <TennisPreMatchScreen commitmentId={id} activityName={activity?.name} reduced={reduced} />;
+  }
 
   return (
     <div className={cn("min-h-screen overflow-hidden bg-[radial-gradient(circle_at_10%_-10%,rgba(255,196,150,0.44),transparent_34%),radial-gradient(circle_at_92%_0%,rgba(255,143,128,0.26),transparent_34%),radial-gradient(circle_at_70%_108%,rgba(101,216,187,0.2),transparent_36%),linear-gradient(135deg,#fffaf5_0%,#fff3ea_48%,#f7fbf3_100%)] text-[#2A2020]", isLeaving && !reduced && "commit-page-fade")}>
